@@ -132,7 +132,6 @@ var _ = { };
   // Calls the method named by methodName on each value in the list.
   // Note: you will nead to learn a bit about .apply to complete this.
   _.invoke = function(collection, functionOrKey, args) {
-
     return _.map(collection, function(item, index){
       if(typeof functionOrKey == "string"){
         return item[functionOrKey].apply(item, args);
@@ -141,7 +140,6 @@ var _ = { };
       }
     });
   };
-
   // Reduces an array or object to a single value by repetitively calling
   // iterator(previousValue, item) for each item. previousValue should be
   // the return value of the previous iterator call.
@@ -156,6 +154,27 @@ var _ = { };
   //     return total + number;
   //   }, 0); // should be 6
   _.reduce = function(collection, iterator, accumulator) {
+    if(Array.isArray(collection)){
+      if(accumulator === undefined){
+        accumulator = collection[0];
+      }
+      for(var i = 0; i < collection.length; i++){
+        accumulator = iterator(accumulator, collection[i]);
+      }
+      return accumulator;
+    }else{
+      if(accumulator === undefined){
+        accumulator = collection[0];
+      }
+      for(var key in collection){
+        if (!collection.hasOwnProperty(key)) {
+          //The current property is not a direct property of p
+          continue;
+        }
+        accumulator = iterator(accumulator, collection[key]);
+      }
+      return accumulator;
+    }
   };
 
   // Determine if the array or object contains a given value (using `===`).
@@ -174,12 +193,32 @@ var _ = { };
   // Determine whether all of the elements match a truth test.
   _.every = function(collection, iterator) {
     // TIP: Try re-using reduce() here.
+    var totalMatch = _.reduce(collection, function(total, item){
+      if(iterator === undefined || iterator(item)){
+        total++;
+      }
+      return total;
+    }, 0);
+
+    return collection.length === totalMatch;
   };
 
   // Determine whether any of the elements pass a truth test. If no iterator is
   // provided, provide a default one
   _.some = function(collection, iterator) {
     // TIP: There's a very clever way to re-use every() here.
+    if(iterator === undefined){
+      iterator = function(){
+        return true;
+      };
+    }
+    var matchFound = false;
+    _.each(collection, function(item){
+      if(iterator(item)){
+        matchFound = true;
+      }
+    });
+    return matchFound;
   };
 
 
@@ -202,11 +241,32 @@ var _ = { };
   //     bla: "even more stuff"
   //   }); // obj1 now contains key1, key2, key3 and bla
   _.extend = function(obj) {
+    for(var i = 0; i < arguments.length; i++){
+      var obj2 = arguments[i];
+      for(var key in obj2){
+        if(!obj2.hasOwnProperty(key)){
+          continue;
+        }
+        obj[key] = obj2[key];
+      }
+    }
+    return obj;
   };
+
 
   // Like extend, but doesn't ever overwrite a key that already
   // exists in obj
   _.defaults = function(obj) {
+    for(var i = 0; i < arguments.length; i++){
+      var obj2 = arguments[i];
+      for(var key in obj2){
+        if(!obj2.hasOwnProperty(key) || obj.hasOwnProperty(key)){
+          continue;
+        }
+        obj[key] = obj2[key];
+      }
+    }
+    return obj;
   };
 
 
@@ -248,6 +308,16 @@ var _ = { };
   // already computed the result for the given argument and return that value
   // instead if possible.
   _.memoize = function(func) {
+    var resultTable = {};
+
+    return function(arg1){
+      if(resultTable.hasOwnProperty(arg1)){
+        return resultTable[arg1];
+      }else{
+        resultTable[arg1] = func.call(this, arg1);
+        return resultTable[arg1];
+      }
+    };
   };
 
   // Delays a function for the given number of milliseconds, and then calls
@@ -257,6 +327,10 @@ var _ = { };
   // parameter. For example _.delay(someFunction, 500, 'a', 'b') will
   // call someFunction('a', 'b') after 500ms
   _.delay = function(func, wait) {
+    var array = Array.prototype.slice.call(arguments, 2);
+    window.setTimeout(function(){
+      func.apply(this, array);
+    }, wait);
   };
 
 
@@ -270,7 +344,18 @@ var _ = { };
   // TIP: This function's test suite will ask that you not modify the original
   // input array. For a tip on how to make a copy of an array, see:
   // http://mdn.io/Array.prototype.slice
+  getRandomInt = function (min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  };
   _.shuffle = function(array) {
+    var arrayVar = array.slice();
+    var shuffledArray = [];
+    while (arrayVar.length > 0){
+      var i = getRandomInt(0, arrayVar.length-1);
+      shuffledArray.push(arrayVar[i]);
+      arrayVar.splice(i, 1);
+    }
+    return shuffledArray;
   };
 
 
